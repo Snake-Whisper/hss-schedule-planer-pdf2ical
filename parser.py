@@ -1,4 +1,7 @@
 import PyPDF2
+import os 
+import re
+import datetime
 
 class YearlySchedule:
     
@@ -7,7 +10,20 @@ class YearlySchedule:
             Reader = PyPDF2.PdfFileReader( pdf )
             PageObject = Reader.getPage(0)
             self.ScheduleRaw = PageObject.extractText().split('\n')
+        
+        self.filterData()
     
+    def filterData(self):
+        self.ScheduleData = []
+        
+        for data in self.ScheduleRaw:
+            FoundClass = re.findall("\AE\d\BFI", data)
+            FoundDate  = re.findall("[0123][0-9][.][ ][][MDFS][oira]", data)
+
+            if FoundDate or FoundClass: 
+                     
+                self.ScheduleData.append(data)
+            
     def TreeObject(self):
         Object = { '1': {}, '2': {}, '3': {}, '4': {}, '5': {}, '6': {}, '7': {}, '8': {}, '9': {}, '10': {}, '11': {}, '12': {} }
         Limit  = { '1': 30, '2': 31, '3': 30, '4': 31, '5': 31, '6': 28, '7': 31, '8': 30, '9': 31, '10': 30, '11': 31, '12': 31 }
@@ -19,22 +35,7 @@ class YearlySchedule:
         Done = False
         secoundHalf = False
         
-        """
-        TODO    self.ScheduleRaw 
-        !       REMOVE      first 7 lines
-        !       REMOVE      2021 2022 strings (like first 7)
-        !       REMOVE      last 19 lines (JUNK)
-        !   OR 
-        §       FILTER FOR MASK 
-        §           DATE: (2[01-31] + '. ' + [MO-SO])
-        §           CLASS:  ('E' + [1-4]) + ('Fl' + [1-4])
-        §                                 + ('Fl' + [A-Z] + [1-4])
-        §       PROBLEM:
-        §                 HOW TO DEAL WITH PUBLIC HOLIDAYS LIKE 'XMAS'
-        §   OR
-        """
-        
-        for data in self.ScheduleRaw[6:-19]:
+        for data in self.ScheduleData:
             
             if len(data) == 6:
                 if data[2] == '.' and data[4:6].lower() in day:
@@ -96,8 +97,7 @@ class YearlySchedule:
     
         
 if __name__ == '__main__':
-    Stundenplan = YearlySchedule('Jahreswochenplan21_22_FI_V2.pdf')
-    
+    Stundenplan = YearlySchedule( os.getcwd().replace('\\', '/') + '/Jahreswochenplan21_22_FI_V2.pdf')
+
     new = Stundenplan.TreeObject()
-    for key, value in new.items():
-        print(value)
+    print(new['8'])
